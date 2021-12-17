@@ -1,0 +1,118 @@
+How to compile :
+assignment3 folder contains Makefile, socket directory,message_queue directory and fifo directory
+
+Each directoty(socket, fifo and message queue) contains P1.c(client program) and P2.c(server program)
+
+go to assignment3
+
+cd assignment3
+
+
+To  compile all programs in all three folder
+make 
+
+To compile  programs in indivdual folder(particular IPC mechanism):
+
+for socket
+make socket_make 
+
+for fifo
+make fifo_make
+
+for message_queue
+make message_queue_make
+
+How to run:
+
+To run socket/message_queue/fifo programs
+go to socket/message_queue/fifo directory
+
+First run ./server
+
+and in another terminal , run ./client
+
+
+
+
+Unix domain Socket programs:
+
+P2.c(Server)
+
+connection_socket = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    if (connection_socket == -1) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+
+Create unix socket(packet socket using SOCK_SEQPACKET as argument ) using socket system call 
+
+    ret = bind(connection_socket, (const struct sockaddr *) &name,
+               sizeof(name));
+
+we got connection socket socket desicrptor and we will use this to bind to an address in the Unix Domain.(hat address is a special file(defined in connection.h) on disk)
+
+ ret = listen(connection_socket, 20);
+
+This will tell the socket to listen for incoming connections 
+
+The second argument 20 is the number of incoming connections that can be queued before you call accept().  If there are this many connections waiting to be accepted, additional clients will generate the error ECONNREFUSED.
+
+
+data_socket = accept(connection_socket, NULL, NULL);
+        if (data_socket == -1) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+
+Acciept connetion from client
+
+using read syste call server accept the strings and their ids and sends back highest Id as acknowledgment 
+
+generate_random_string funtion generates random string of fixed length
+
+P1.c(Client)
+
+Unix Domain Sockets is  a two-way communications pipe unlike FIFO and message_queue.
+
+struct sockaddr_un addr;
+
+Above line will create A UNIX domain socket address is represented in the following
+       structure:
+
+           struct sockaddr_un {
+               sa_family_t sun_family;               
+               char        sun_path[108];            
+           };	
+
+
+
+sun_family field always contains AF_UNIX. sun_path is 108 bytes in size
+
+data_socket = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+
+using socket system call with argument AF_UNIX and SOCK_SEQPACKET will create the Unix socket.
+SOCK_SEQPACKET is used for a sequenced-packet socket that is connection-oriented, preserves message boundaries, and delivers messages in
+the order that they were sent
+
+
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, SOCKET_NAME, sizeof(addr.sun_path) - 1);
+    ret = connect(data_socket, (const struct sockaddr *) &addr,
+                   sizeof(addr));
+
+using connect system call, we are connecting to the remote address where server is listening . the socket address (SOCKET_NAME)  is a special file(/tmp/abcd.socket defined in connection.h header file ) on disk().
+
+ we have connected to the server, we will use write to the socket fd and read from the socket fd.
+
+
+we will run for loop 10 times
+In each loop we send 5 strings with thier ID's using wtrite system call by writing to the socket fd.
+client receive the acknowledgement id using read system call.
+
+
+
+
+For Message Queue and FIFO , I have explaing in the corresponding programs itself.
+
+
